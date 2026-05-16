@@ -1,6 +1,7 @@
 mod base;
 
 mod add;
+mod cast;
 mod div;
 mod exp;
 mod gemm;
@@ -16,6 +17,7 @@ mod relu;
 mod sub;
 
 use add::AddOperator;
+use cast::CastOperator;
 use div::DivOperator;
 use exp::ExpOperator;
 use gemm::GemmOperator;
