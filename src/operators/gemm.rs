@@ -1,5 +1,5 @@
 use color_eyre::eyre::Result;
-use std::{collections::HashMap, fmt::format};
+use std::collections::HashMap;
 use tract_onnx::pb::{GraphProto, NodeProto};
 
 use super::base::{BaseData, BaseOperator};

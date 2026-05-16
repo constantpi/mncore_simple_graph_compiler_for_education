@@ -1,6 +1,4 @@
-use color_eyre::eyre::Result;
-use std::collections::HashMap;
-use tract_onnx::pb::{ModelProto, ValueInfoProto, tensor_shape_proto::dimension, type_proto};
+use tract_onnx::pb::{ValueInfoProto, tensor_shape_proto::dimension, type_proto};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ElemType {
@@ -20,15 +18,12 @@ pub fn value_info_to_type_vector(value_info: &ValueInfoProto) -> Option<(Vec<usi
     let Some(shape) = &tensor.shape else {
         return None;
     };
-    let Some(dim) = shape
+    let value_dim = shape
         .dim
         .iter()
         .map(|d| d.value.clone())
-        .collect::<Option<Vec<_>>>()
-    else {
-        return None;
-    };
-    let Some(dim) = dim
+        .collect::<Option<Vec<_>>>()?;
+    let dim = value_dim
         .iter()
         .map(|d| {
             if let dimension::Value::DimValue(size) = d {
@@ -37,10 +32,8 @@ pub fn value_info_to_type_vector(value_info: &ValueInfoProto) -> Option<(Vec<usi
                 None
             }
         })
-        .collect::<Option<Vec<_>>>()
-    else {
-        return None;
-    };
+        .collect::<Option<Vec<_>>>()?;
+
     let elem_type = match elem_type {
         6 => ElemType::Int,   // INT32
         7 => ElemType::Int,   // INT64

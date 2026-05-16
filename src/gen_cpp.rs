@@ -1,7 +1,6 @@
 use color_eyre::eyre::Result;
 use std::collections::HashMap;
-use tract_onnx::pb::{ModelProto, ValueInfoProto, tensor_shape_proto::dimension, type_proto};
-use tract_onnx::prelude::*;
+use tract_onnx::pb::ModelProto;
 
 use crate::operators::gen_base_operator;
 use crate::utils::{ElemType, value_info_to_type_vector};
@@ -22,7 +21,7 @@ pub fn generate_cpp_code(model: ModelProto) -> Result<String> {
     // 出力の形状をコメントとして追加
     for out in graph.output.iter() {
         let name = out.name.clone();
-        let Some((dim, _elem_type)) = value_info_to_type_vector(&out) else {
+        let Some((dim, _elem_type)) = value_info_to_type_vector(out) else {
             continue;
         };
         if dim.is_empty() || (dim.len() == 1 && dim[0] == 1 && name.contains("loss")) {
@@ -48,7 +47,7 @@ pub fn generate_cpp_code(model: ModelProto) -> Result<String> {
     for input in graph.input.iter() {
         let name = input.name.clone();
         param_names.push(name.clone());
-        let Some((_dim, elem_type)) = value_info_to_type_vector(&input) else {
+        let Some((_dim, elem_type)) = value_info_to_type_vector(input) else {
             continue;
         };
         if elem_type == ElemType::Int {
@@ -73,7 +72,7 @@ pub fn generate_cpp_code(model: ModelProto) -> Result<String> {
         *cnt += 1;
 
         // 出力の型に基づいてポインタの型を決定
-        let Some((_, elem_type)) = value_info_to_type_vector(&output) else {
+        let Some((_, elem_type)) = value_info_to_type_vector(output) else {
             continue;
         };
         if elem_type == ElemType::Int {
@@ -85,22 +84,21 @@ pub fn generate_cpp_code(model: ModelProto) -> Result<String> {
         }
     }
     // sig_linesの最後の行の末尾のカンマを削除して、関数シグネチャを完成させる
-    if let Some(last_line) = sig_lines.last_mut() {
-        if last_line.ends_with(",") {
-            last_line.pop();
-        }
+    if let Some(last_line) = sig_lines.last_mut()
+        && last_line.ends_with(",")
+    {
+        last_line.pop();
     }
     sig_lines.push(") {".to_string());
     lines.extend(sig_lines);
 
     // 変数名の追跡
     let mut variable_map = HashMap::new();
-    let mut temp_counter = 0usize;
 
     // すべての入力とパラメータを読み込む
     lines.push("    // 入力とパラメータを読み込む".to_string());
     for input in graph.input.iter() {
-        let Some((dim, elem_type)) = value_info_to_type_vector(&input) else {
+        let Some((dim, elem_type)) = value_info_to_type_vector(input) else {
             continue;
         };
         variable_map.insert(input.name.clone(), input.name.clone());
