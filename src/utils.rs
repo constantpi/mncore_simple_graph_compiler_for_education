@@ -60,7 +60,7 @@ pub fn tensor_proto_to_int_vector(tensor_proto: &TensorProto) -> Option<Vec<i64>
             .iter()
             .map(|&x| x as i64)
             .collect::<Vec<_>>(),
-        DataType::Int64 => tensor_proto.int64_data.iter().cloned().collect(),
+        DataType::Int64 => tensor_proto.int64_data.to_vec(),
         _ => return None,
     };
     if ans.len() == calc_elem_count(&tensor_proto_to_dim_vector(tensor_proto)) {
@@ -78,7 +78,7 @@ pub fn tensor_proto_to_float_vector(tensor_proto: &TensorProto) -> Option<Vec<f6
             .iter()
             .map(|x| *x as f64)
             .collect::<Vec<_>>(),
-        DataType::Double => tensor_proto.double_data.iter().cloned().collect(),
+        DataType::Double => tensor_proto.double_data.to_vec(),
         _ => return None,
     };
     if ans.len() == calc_elem_count(&tensor_proto_to_dim_vector(tensor_proto)) {

@@ -44,7 +44,7 @@ impl<'a> BaseData<'a> {
             .ok_or_else(|| {
                 color_eyre::eyre::eyre!("Attribute 'axes' not found for operator {}", self.name)
             })?;
-        Ok(axes_attr.ints.iter().map(|&d| d).collect())
+        Ok(axes_attr.ints.to_vec())
     }
 
     pub fn initializer_iter(&self) -> impl Iterator<Item = &tract_onnx::pb::TensorProto> {

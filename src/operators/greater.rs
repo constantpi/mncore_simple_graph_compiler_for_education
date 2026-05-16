@@ -48,8 +48,7 @@ impl<'a> BaseOperator<'a> for GreaterOperator<'a> {
             .base_data()
             .initializer_iter()
             .find(|init| &init.name == input2)
-            .and_then(tensor_proto_to_float_vector)
-            .and_then(|vec| Some(vec == vec![0.0]))
+            .and_then(tensor_proto_to_float_vector).map(|vec| vec == vec![0.0])
             .unwrap_or(false);
         if !is_zero {
             return Err(color_eyre::eyre::eyre!(
