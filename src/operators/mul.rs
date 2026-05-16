@@ -45,9 +45,7 @@ impl<'a> BaseOperator<'a> for MulOperator<'a> {
         // 2番めの入力が初期化子かどうかをチェック
         let is_initializer = self
             .base_data()
-            .graph
-            .initializer
-            .iter()
+            .initializer_iter()
             .any(|init| &init.name == input1);
 
         // 2番めの入力がスカラーかどうかをチェック
@@ -57,9 +55,7 @@ impl<'a> BaseOperator<'a> for MulOperator<'a> {
                 // 初期化子でスカラーの場合、定数としてコードを生成
                 let tensor = self
                     .base_data()
-                    .graph
-                    .initializer
-                    .iter()
+                    .initializer_iter()
                     .find(|init| &init.name == input1)
                     .and_then(tensor_proto_to_float_vector)
                     .ok_or(color_eyre::eyre::eyre!(

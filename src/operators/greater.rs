@@ -46,9 +46,7 @@ impl<'a> BaseOperator<'a> for GreaterOperator<'a> {
 
         let is_zero = self
             .base_data()
-            .graph
-            .initializer
-            .iter()
+            .initializer_iter()
             .find(|init| &init.name == input2)
             .and_then(tensor_proto_to_float_vector)
             .and_then(|vec| Some(vec == vec![0.0]))

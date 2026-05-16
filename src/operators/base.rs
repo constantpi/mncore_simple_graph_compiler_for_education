@@ -46,6 +46,10 @@ impl<'a> BaseData<'a> {
             })?;
         Ok(axes_attr.ints.iter().map(|&d| d).collect())
     }
+
+    pub fn initializer_iter(&self) -> impl Iterator<Item = &tract_onnx::pb::TensorProto> {
+        self.graph.initializer.iter()
+    }
 }
 
 pub trait BaseOperator<'a> {
@@ -107,9 +111,7 @@ pub trait BaseOperator<'a> {
             Ok(shape)
         } else if let Some(shape) = self
             .base_data()
-            .graph
-            .initializer
-            .iter()
+            .initializer_iter()
             .find(|init| init.name == tensor_name)
             .map(|init| init.dims.iter().map(|d| *d as usize).collect())
         {

@@ -81,9 +81,7 @@ impl OneHotOperator<'_> {
             };
             let Some(tensor) = self
                 .base_data()
-                .graph
-                .initializer
-                .iter()
+                .initializer_iter()
                 .find(|init| &init.name == depth_name)
                 .and_then(tensor_proto_to_int_vector)
             else {
