@@ -156,6 +156,7 @@ pub fn gen_base_operator<'a>(
         "Exp" => Ok(Box::new(ExpOperator::new(node_proto, graph, var_map))),
         "ReduceSum" => Ok(Box::new(ReduceSumOperator::new(node_proto, graph, var_map))),
         "Div" => Ok(Box::new(DivOperator::new(node_proto, graph, var_map))),
+        "Log" => Ok(Box::new(LogOperator::new(node_proto, graph, var_map))),
         _ => Err(color_eyre::eyre::eyre!(
             "Unsupported operator type: {}",
             node_proto.op_type
