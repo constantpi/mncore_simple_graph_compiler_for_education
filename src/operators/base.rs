@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use tract_onnx::pb::{GraphProto, NodeProto};
 
 use super::AddOperator;
+use crate::utils::{ElemType, value_info_to_type_vector};
 
 pub struct BaseData {
     pub node_proto: NodeProto,
@@ -45,7 +46,7 @@ pub trait BaseOperator {
     fn base_data_mut(&mut self) -> &mut BaseData;
     fn base_data(&self) -> &BaseData;
 
-    fn generate_cpp_code(&mut self) -> Result<String>;
+    fn generate_cpp_code(&mut self) -> Result<Vec<String>>;
 
     fn get_mapped_variable(&self, original_name: &str) -> Result<String> {
         self.base_data()
@@ -69,6 +70,63 @@ pub trait BaseOperator {
             })
             .unwrap_or(self.base_data().name.clone())
     }
+
+    fn in_shape(&self, index: usize) -> Result<Vec<usize>> {
+        let input_name = self.base_data().inputs.get(index).ok_or_else(|| {
+            color_eyre::eyre::eyre!(
+                "Input index {} out of bounds for operator {}",
+                index,
+                self.base_data().name
+            )
+        })?;
+        self.get_tensor_shape(input_name)
+    }
+
+    fn get_tensor_shape(&self, tensor_name: &str) -> Result<Vec<usize>> {
+        // まず、グラフのinput、value_info、output、initializerを順番に検索するために一連の長いchainを作成する
+        if let Some(shape) = [
+            self.base_data().graph.input.iter(),
+            self.base_data().graph.value_info.iter(),
+            self.base_data().graph.output.iter(),
+        ]
+        .into_iter()
+        .flatten()
+        .find(|value_info| value_info.name == tensor_name)
+        .and_then(|value_info| value_info_to_type_vector(value_info).map(|(shape, _)| shape))
+        {
+            Ok(shape)
+        } else if let Some(shape) = self
+            .base_data()
+            .graph
+            .initializer
+            .iter()
+            .find(|init| init.name == tensor_name)
+            .map(|init| init.dims.iter().map(|d| *d as usize).collect())
+        {
+            Ok(shape)
+        } else {
+            Err(color_eyre::eyre::eyre!(
+                "Tensor shape not found for tensor: {}",
+                tensor_name
+            ))
+        }
+    }
+
+    fn set_output_var_name(&mut self, var_name: String) -> Result<()> {
+        // var_mapに出力変数名を追加
+        let output_name = self
+            .base_data()
+            .outputs
+            .first()
+            .ok_or_else(|| {
+                color_eyre::eyre::eyre!("No outputs found for operator {}", self.base_data().name)
+            })?
+            .clone();
+        self.base_data_mut()
+            .var_map
+            .insert(output_name.clone(), var_name);
+        Ok(())
+    }
 }
 
 pub fn gen_base_operator(
@@ -77,8 +135,7 @@ pub fn gen_base_operator(
     var_map: &mut HashMap<String, String>,
 ) -> Result<Box<dyn BaseOperator>> {
     match node_proto.op_type.as_str() {
-        // "Add" => Box::new(AddOperator::new(node_proto, graph, var_map)),
-        _ => Ok(Box::new(AddOperator::new(node_proto, graph, var_map))),
+        "Add" => Ok(Box::new(AddOperator::new(node_proto, graph, var_map))),
         // 他の演算子もここに追加
         _ => Err(color_eyre::eyre::eyre!(
             "Unsupported operator type: {}",
