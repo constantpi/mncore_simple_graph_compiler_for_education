@@ -15,6 +15,7 @@ fn main() -> Result<()> {
         return Err(color_eyre::eyre::eyre!("Failed to load model from proto"));
     };
     let cpp_code = gen_cpp::generate_cpp_code(model_proto)?;
-    println!("{}", cpp_code);
+    // fileに出力
+    std::fs::write("outputs/model.cpp", cpp_code)?;
     Ok(())
 }
