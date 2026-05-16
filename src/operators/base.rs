@@ -2,7 +2,7 @@ use color_eyre::eyre::Result;
 use std::collections::HashMap;
 use tract_onnx::pb::{GraphProto, NodeProto};
 
-use super::{AddOperator, GemmOperator};
+use super::{AddOperator, GemmOperator, ReluOperator};
 use crate::utils::value_info_to_type_vector;
 
 pub struct BaseData<'a> {
@@ -139,6 +139,7 @@ pub fn gen_base_operator<'a>(
     match node_proto.op_type.as_str() {
         "Add" => Ok(Box::new(AddOperator::new(node_proto, graph, var_map))),
         "Gemm" => Ok(Box::new(GemmOperator::new(node_proto, graph, var_map))),
+        "Relu" => Ok(Box::new(ReluOperator::new(node_proto, graph, var_map))),
         // 他の演算子もここに追加
         _ => Err(color_eyre::eyre::eyre!(
             "Unsupported operator type: {}",
