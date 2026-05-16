@@ -5,6 +5,7 @@ mod exp;
 mod gemm;
 mod identity;
 mod reduce_max;
+mod reduce_sum;
 mod relu;
 mod sub;
 
@@ -13,6 +14,7 @@ use exp::ExpOperator;
 use gemm::GemmOperator;
 use identity::IdentityOperator;
 use reduce_max::ReduceMaxOperator;
+use reduce_sum::ReduceSumOperator;
 use relu::ReluOperator;
 use sub::SubOperator;
 
