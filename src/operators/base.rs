@@ -160,6 +160,7 @@ pub fn gen_base_operator<'a>(
         "NegativeLogLikelihoodLoss" => {
             Ok(Box::new(NLLLossOperator::new(node_proto, graph, var_map)))
         }
+        "OneHot" => Ok(Box::new(OneHotOperator::new(node_proto, graph, var_map))),
         _ => Err(color_eyre::eyre::eyre!(
             "Unsupported operator type: {}",
             node_proto.op_type
