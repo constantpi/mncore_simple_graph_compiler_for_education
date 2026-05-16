@@ -33,8 +33,8 @@ impl<'a> BaseOperator<'a> for NLLLossOperator<'a> {
                 "NLLLoss operator requires exactly 2 inputs"
             ));
         };
-        let log_prods_var = self.get_mapped_variable(input0)?;
-        let target_var = self.get_mapped_variable(input1)?;
+        let log_prods_var = self.get_mapped_variable(input0);
+        let target_var = self.get_mapped_variable(input1);
         let out_var = self.get_output_var_name();
 
         let log_prods_shape = self.in_shape(0)?;

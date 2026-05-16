@@ -34,7 +34,7 @@ impl<'a> BaseOperator<'a> for ReduceSumOperator<'a> {
                 "ReduceSum operator requires exactly 1 input"
             ));
         };
-        let in_var = self.get_mapped_variable(input)?;
+        let in_var = self.get_mapped_variable(input);
         let out_var = self.get_output_var_name();
 
         let axes = self.base_data().get_axes()?;

@@ -33,7 +33,7 @@ impl<'a> BaseOperator<'a> for OneHotOperator<'a> {
                 "OneHot operator requires exactly 1 input"
             ));
         };
-        let in_var = self.get_mapped_variable(input)?;
+        let in_var = self.get_mapped_variable(input);
         let out_var = self.get_output_var_name();
 
         let in_shape = self.in_shape(0)?;
@@ -78,6 +78,7 @@ impl OneHotOperator<'_> {
                     "OneHot operator requires a second input for depth if the 'depth' attribute is not provided"
                 ));
             };
+            // TODO: これは本当にdimsを見れば良いのか…？
             if let Some(dims) = self
                 .base_data()
                 .graph

@@ -35,8 +35,8 @@ impl<'a> BaseOperator<'a> for SubOperator<'a> {
             ));
         };
 
-        let in0 = self.get_mapped_variable(input0)?;
-        let in1 = self.get_mapped_variable(input1)?;
+        let in0 = self.get_mapped_variable(input0);
+        let in1 = self.get_mapped_variable(input1);
         let out_var = self.get_output_var_name();
 
         let shape0 = self.in_shape(0)?;

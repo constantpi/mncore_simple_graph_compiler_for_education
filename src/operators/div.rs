@@ -33,8 +33,8 @@ impl<'a> BaseOperator<'a> for DivOperator<'a> {
                 "Div operator requires exactly 2 inputs"
             ));
         };
-        let in_var1 = self.get_mapped_variable(input1)?;
-        let in_var2 = self.get_mapped_variable(input2)?;
+        let in_var1 = self.get_mapped_variable(input1);
+        let in_var2 = self.get_mapped_variable(input2);
         let out_var = self.get_output_var_name();
 
         let shape1 = self.in_shape(0)?;

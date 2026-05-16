@@ -35,8 +35,8 @@ impl<'a> BaseOperator<'a> for GemmOperator<'a> {
             ));
         };
 
-        let in_a = self.get_mapped_variable(input0)?;
-        let in_b = self.get_mapped_variable(input1)?;
+        let in_a = self.get_mapped_variable(input0);
+        let in_b = self.get_mapped_variable(input1);
         let out_var = self.get_output_var_name();
 
         if self

@@ -33,7 +33,7 @@ impl<'a> BaseOperator<'a> for LogOperator<'a> {
                 "Log operator requires exactly 1 input"
             ));
         };
-        let in_var = self.get_mapped_variable(input)?;
+        let in_var = self.get_mapped_variable(input);
         let out_var = self.get_output_var_name();
 
         let shape = self.in_shape(0)?;

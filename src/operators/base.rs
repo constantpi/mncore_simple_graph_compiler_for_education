@@ -62,14 +62,12 @@ pub trait BaseOperator<'a> {
 
     fn generate_cpp_code(&mut self) -> Result<Vec<String>>;
 
-    fn get_mapped_variable(&self, original_name: &str) -> Result<String> {
+    fn get_mapped_variable(&self, original_name: &str) -> String {
         self.base_data()
             .var_map
             .get(original_name)
-            .cloned()
-            .ok_or_else(|| {
-                color_eyre::eyre::eyre!("Variable {} not found in var_map", original_name)
-            })
+            .unwrap_or(&original_name.to_string())
+            .clone()
     }
 
     fn get_output_var_name(&self) -> String {
@@ -161,6 +159,7 @@ pub fn gen_base_operator<'a>(
             Ok(Box::new(NLLLossOperator::new(node_proto, graph, var_map)))
         }
         "OneHot" => Ok(Box::new(OneHotOperator::new(node_proto, graph, var_map))),
+        "Mul" => Ok(Box::new(MulOperator::new(node_proto, graph, var_map))),
         _ => Err(color_eyre::eyre::eyre!(
             "Unsupported operator type: {}",
             node_proto.op_type
