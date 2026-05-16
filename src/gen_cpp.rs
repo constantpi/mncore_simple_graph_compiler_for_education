@@ -3,16 +3,20 @@ use std::collections::HashMap;
 use tract_onnx::pb::{ModelProto, ValueInfoProto, tensor_shape_proto::dimension, type_proto};
 use tract_onnx::prelude::*;
 
-fn value_info_to_type_vector(value_info: &ValueInfoProto) -> Option<(Vec<usize>, i32)> {
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ElemType {
+    Float, // float
+    Int,   // int
+}
+
+fn value_info_to_type_vector(value_info: &ValueInfoProto) -> Option<(Vec<usize>, ElemType)> {
     let Some(type_proto) = &value_info.r#type else {
         return None;
     };
     let Some(tensor_type) = &type_proto.value else {
         return None;
     };
-    let type_proto::Value::TensorType(tensor) = tensor_type else {
-        return None;
-    };
+    let type_proto::Value::TensorType(tensor) = tensor_type;
     let elem_type = tensor.elem_type;
     let Some(shape) = &tensor.shape else {
         return None;
@@ -37,6 +41,11 @@ fn value_info_to_type_vector(value_info: &ValueInfoProto) -> Option<(Vec<usize>,
         .collect::<Option<Vec<_>>>()
     else {
         return None;
+    };
+    let elem_type = match elem_type {
+        6 => ElemType::Int,   // INT32
+        7 => ElemType::Int,   // INT64
+        _ => ElemType::Float, // それ以外はすべてfloatとして扱う
     };
     Some((dim, elem_type))
 }
@@ -86,7 +95,7 @@ pub fn generate_cpp_code(model: ModelProto) -> Result<String> {
         let Some((_dim, elem_type)) = value_info_to_type_vector(&input) else {
             continue;
         };
-        if elem_type == 6 || elem_type == 7 {
+        if elem_type == ElemType::Int {
             //INT32, INT64 は int* として表現
             sig_lines.push(format!("    const int* {name}_ptr,"));
         } else {
@@ -111,7 +120,7 @@ pub fn generate_cpp_code(model: ModelProto) -> Result<String> {
         let Some((_, elem_type)) = value_info_to_type_vector(&output) else {
             continue;
         };
-        if elem_type == 6 || elem_type == 7 {
+        if elem_type == ElemType::Int {
             //INT32, INT64 は int* として表現
             sig_lines.push(format!("    int* {unique_name}_ptr,"));
         } else {
@@ -119,8 +128,76 @@ pub fn generate_cpp_code(model: ModelProto) -> Result<String> {
             sig_lines.push(format!("    float* {unique_name}_ptr,"));
         }
     }
-
+    // sig_linesの最後の行の末尾のカンマを削除して、関数シグネチャを完成させる
+    if let Some(last_line) = sig_lines.last_mut() {
+        if last_line.ends_with(",") {
+            last_line.pop();
+        }
+    }
+    sig_lines.push(") {".to_string());
     lines.extend(sig_lines);
+
+    // 変数名の追跡
+    let mut variable_map = HashMap::new();
+    let mut temp_counter = 0usize;
+
+    // すべての入力とパラメータを読み込む
+    lines.push("    // 入力とパラメータを読み込む".to_string());
+    for input in graph.input.iter() {
+        let Some((dim, elem_type)) = value_info_to_type_vector(&input) else {
+            continue;
+        };
+        variable_map.insert(input.name.clone(), input.name.clone());
+        match elem_type {
+            ElemType::Int => {
+                if dim.len() == 1 {
+                    lines.push(format!(
+                        "   const array {} = load<{}, int>({}_ptr);",
+                        input.name, dim[0], input.name
+                    ));
+                } else {
+                    return Err(color_eyre::eyre::eyre!(
+                        "Unsupported input shape for int type: {:?}",
+                        dim
+                    ));
+                }
+            }
+            ElemType::Float => {
+                // # 通常のfloatテンソル
+                match dim.len() {
+                    2 => lines.push(format!(
+                        "    const Matrix<{dim0}, {dim1}> {name} = load<{dim0}, {dim1}>({name}_ptr);",
+                        dim0 = dim[0],
+                        dim1 = dim[1],
+                        name = input.name
+                    )),
+                    1 => lines.push(format!(
+                        "    const Vector<{dim0}> {name} = load<{dim0}>({name}_ptr);",
+                        dim0 = dim[0],
+                        name = input.name
+                    )),
+                    0 => lines.push(format!(
+                        "    const float {name} = *{name}_ptr;",
+                        name = input.name
+                    )),
+                    _ => {
+                        return Err(color_eyre::eyre::eyre!(
+                            "Unsupported input shape for float type: {:?}",
+                            dim
+                        ));
+                    }
+                }
+            }
+        }
+    }
+    lines.push("".to_string());
+
+    // ノードを処理
+    lines.push("    // ノードを処理".to_string());
+    for node in graph.node.iter() {
+        //
+        let op_type = node.op_type.clone();
+    }
 
     Ok(lines.join("\n"))
 }
