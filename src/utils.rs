@@ -1,4 +1,6 @@
-use tract_onnx::pb::{ValueInfoProto, tensor_shape_proto::dimension, type_proto};
+use tract_onnx::pb::{
+    TensorProto, ValueInfoProto, tensor_proto::DataType, tensor_shape_proto::dimension, type_proto,
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ElemType {
@@ -40,4 +42,48 @@ pub fn value_info_to_type_vector(value_info: &ValueInfoProto) -> Option<(Vec<usi
         _ => ElemType::Float, // それ以外はすべてfloatとして扱う
     };
     Some((dim, elem_type))
+}
+
+pub fn tensor_proto_to_dim_vector(tensor_proto: &TensorProto) -> Vec<usize> {
+    tensor_proto.dims.iter().map(|d| *d as usize).collect()
+}
+
+fn calc_elem_count(dims: &[usize]) -> usize {
+    dims.iter().product()
+}
+
+pub fn tensor_proto_to_int_vector(tensor_proto: &TensorProto) -> Option<Vec<i64>> {
+    let data_type = tensor_proto.data_type();
+    let ans = match data_type {
+        DataType::Int32 => tensor_proto
+            .int32_data
+            .iter()
+            .map(|&x| x as i64)
+            .collect::<Vec<_>>(),
+        DataType::Int64 => tensor_proto.int64_data.iter().cloned().collect(),
+        _ => return None,
+    };
+    if ans.len() == calc_elem_count(&tensor_proto_to_dim_vector(tensor_proto)) {
+        Some(ans)
+    } else {
+        None
+    }
+}
+
+pub fn tensor_proto_to_float_vector(tensor_proto: &TensorProto) -> Option<Vec<f64>> {
+    let data_type = tensor_proto.data_type();
+    let ans = match data_type {
+        DataType::Float => tensor_proto
+            .float_data
+            .iter()
+            .map(|x| *x as f64)
+            .collect::<Vec<_>>(),
+        DataType::Double => tensor_proto.double_data.iter().cloned().collect(),
+        _ => return None,
+    };
+    if ans.len() == calc_elem_count(&tensor_proto_to_dim_vector(tensor_proto)) {
+        Some(ans)
+    } else {
+        None
+    }
 }
