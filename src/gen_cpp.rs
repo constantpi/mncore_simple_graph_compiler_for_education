@@ -147,7 +147,7 @@ pub fn generate_cpp_code(model: ModelProto) -> Result<String> {
     lines.push("".to_string());
 
     // ノードを処理
-    lines.push("    // ノードを処理".to_string());
+    lines.push("    // 計算".to_string());
     for node in graph.node.iter() {
         let mut operator = gen_base_operator(node, &graph, &mut variable_map)?;
         let op_lines = operator.generate_cpp_code()?;
@@ -179,7 +179,7 @@ pub fn generate_cpp_code(model: ModelProto) -> Result<String> {
     }
     lines.push("}".to_string());
     lines.push("".to_string());
-    lines.push("} // extern \"C\"".to_string());
+    lines.push("}  // extern \"C\"".to_string());
 
     Ok(lines.join("\n"))
 }

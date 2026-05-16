@@ -85,7 +85,7 @@ impl<'a> BaseOperator<'a> for GemmOperator<'a> {
             (
                 shape_a_1,
                 shape_a_0,
-                format!("trans<{shape_a_0},{shape_a_1}>({in_a})"),
+                format!("trans<{shape_a_0}, {shape_a_1}>({in_a})"),
             )
         } else {
             (shape_a_0, shape_a_1, in_a)
@@ -94,7 +94,7 @@ impl<'a> BaseOperator<'a> for GemmOperator<'a> {
             (
                 shape_b_1,
                 shape_b_0,
-                format!("trans<{shape_b_0},{shape_b_1}>({in_b})"),
+                format!("trans<{shape_b_0}, {shape_b_1}>({in_b})"),
             )
         } else {
             (shape_b_0, shape_b_1, in_b)

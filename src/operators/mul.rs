@@ -34,7 +34,6 @@ impl<'a> BaseOperator<'a> for MulOperator<'a> {
                 "Mul operator requires exactly 2 inputs"
             ));
         };
-        println!("input0: {input0}, input1: {input1}");
         let in_var0 = self.get_mapped_variable(input0);
         let in_var1 = self.get_mapped_variable(input1);
         let out_var = self.get_output_var_name();
