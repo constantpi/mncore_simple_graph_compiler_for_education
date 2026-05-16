@@ -2,23 +2,23 @@ use color_eyre::eyre::Result;
 use std::collections::HashMap;
 use tract_onnx::pb::{GraphProto, NodeProto};
 
-use super::AddOperator;
-use crate::utils::{ElemType, value_info_to_type_vector};
+use super::{AddOperator, GemmOperator};
+use crate::utils::value_info_to_type_vector;
 
-pub struct BaseData {
+pub struct BaseData<'a> {
     pub node_proto: NodeProto,
     pub graph: GraphProto,
-    pub var_map: HashMap<String, String>,
+    pub var_map: &'a mut HashMap<String, String>,
     pub inputs: Vec<String>,
     pub outputs: Vec<String>,
     pub name: String,
 }
 
-impl BaseData {
+impl<'a> BaseData<'a> {
     pub fn new(
         node_proto: &NodeProto,
         graph: &GraphProto,
-        var_map: &mut HashMap<String, String>,
+        var_map: &'a mut HashMap<String, String>,
     ) -> Self {
         let inputs = node_proto.input.clone();
         let outputs = node_proto.output.clone();
@@ -26,25 +26,29 @@ impl BaseData {
         Self {
             node_proto: node_proto.clone(),
             graph: graph.clone(),
-            var_map: var_map.clone(),
+            var_map,
             inputs,
             outputs,
             name,
         }
     }
+
+    pub fn attr_iter(&self) -> impl Iterator<Item = &tract_onnx::pb::AttributeProto> {
+        self.node_proto.attribute.iter()
+    }
 }
 
-pub trait BaseOperator {
+pub trait BaseOperator<'a> {
     fn new(
         node_proto: &NodeProto,
         graph: &GraphProto,
-        var_map: &mut HashMap<String, String>,
+        var_map: &'a mut HashMap<String, String>,
     ) -> Self
     where
         Self: Sized;
 
-    fn base_data_mut(&mut self) -> &mut BaseData;
-    fn base_data(&self) -> &BaseData;
+    fn base_data_mut(&mut self) -> &mut BaseData<'a>;
+    fn base_data(&self) -> &BaseData<'a>;
 
     fn generate_cpp_code(&mut self) -> Result<Vec<String>>;
 
@@ -60,9 +64,7 @@ pub trait BaseOperator {
 
     fn get_output_var_name(&self) -> String {
         self.base_data()
-            .node_proto
-            .attribute
-            .iter()
+            .attr_iter()
             .find(|attr| attr.name == "var_name")
             .and_then(|attr| {
                 // attr.sはVec<u8>なので、Stringに変換する必要がある
@@ -129,13 +131,14 @@ pub trait BaseOperator {
     }
 }
 
-pub fn gen_base_operator(
+pub fn gen_base_operator<'a>(
     node_proto: &NodeProto,
     graph: &GraphProto,
-    var_map: &mut HashMap<String, String>,
-) -> Result<Box<dyn BaseOperator>> {
+    var_map: &'a mut HashMap<String, String>,
+) -> Result<Box<dyn BaseOperator<'a> + 'a>> {
     match node_proto.op_type.as_str() {
         "Add" => Ok(Box::new(AddOperator::new(node_proto, graph, var_map))),
+        "Gemm" => Ok(Box::new(GemmOperator::new(node_proto, graph, var_map))),
         // 他の演算子もここに追加
         _ => Err(color_eyre::eyre::eyre!(
             "Unsupported operator type: {}",
