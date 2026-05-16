@@ -1,6 +1,7 @@
 mod base;
 
 mod add;
+mod div;
 mod exp;
 mod gemm;
 mod identity;
@@ -10,6 +11,7 @@ mod relu;
 mod sub;
 
 use add::AddOperator;
+use div::DivOperator;
 use exp::ExpOperator;
 use gemm::GemmOperator;
 use identity::IdentityOperator;
