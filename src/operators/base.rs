@@ -160,6 +160,7 @@ pub fn gen_base_operator<'a>(
         }
         "OneHot" => Ok(Box::new(OneHotOperator::new(node_proto, graph, var_map))),
         "Mul" => Ok(Box::new(MulOperator::new(node_proto, graph, var_map))),
+        "Greater" => Ok(Box::new(GreaterOperator::new(node_proto, graph, var_map))),
         _ => Err(color_eyre::eyre::eyre!(
             "Unsupported operator type: {}",
             node_proto.op_type
