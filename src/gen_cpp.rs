@@ -108,7 +108,7 @@ pub fn generate_cpp_code(model: ModelProto) -> Result<String> {
             ElemType::Int => {
                 if dim.len() == 1 {
                     lines.push(format!(
-                        "   const array {} = load<{}, int>({}_ptr);",
+                        "    const array {} = load<{}, int>({}_ptr);",
                         input.name, dim[0], input.name
                     ));
                 } else {
@@ -152,7 +152,15 @@ pub fn generate_cpp_code(model: ModelProto) -> Result<String> {
     lines.push("    // ノードを処理".to_string());
     for node in graph.node.iter() {
         let op_type = node.op_type.clone();
+        println!("Processing node: {} of type {}", node.name, op_type);
         let mut operator = gen_base_operator(node, &graph, &mut variable_map)?;
+        let op_lines = operator.generate_cpp_code()?;
+        println!(
+            "Generated code for node {}:\n{}",
+            node.name,
+            op_lines.join("\n")
+        );
+        lines.extend(op_lines);
     }
 
     Ok(lines.join("\n"))
