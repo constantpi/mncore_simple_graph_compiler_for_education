@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use tract_onnx::pb::{GraphProto, NodeProto};
 
 use super::base::{BaseData, BaseOperator};
+use crate::utils::tensor_proto_to_int_vector;
 
 pub struct OneHotOperator<'a> {
     // OneHot specific fields for the OneHot operator if needed
@@ -78,29 +79,24 @@ impl OneHotOperator<'_> {
                     "OneHot operator requires a second input for depth if the 'depth' attribute is not provided"
                 ));
             };
-            // TODO: これは本当にdimsを見れば良いのか…？
-            if let Some(dims) = self
+            let Some(tensor) = self
                 .base_data()
                 .graph
                 .initializer
                 .iter()
-                .find(|init| init.name == *depth_name)
-                .map(|init| init.dims.clone())
-            {
-                if let [depth] = dims.as_slice() {
-                    Ok(*depth as usize)
-                } else {
-                    Err(color_eyre::eyre::eyre!(
-                        "Depth input {} for OneHot operator must be a scalar",
-                        depth_name
-                    ))
-                }
-            } else {
-                Err(color_eyre::eyre::eyre!(
-                    "Depth input {} for OneHot operator must be an initializer",
-                    depth_name
-                ))
-            }
+                .find(|init| &init.name == depth_name)
+                .and_then(tensor_proto_to_int_vector)
+            else {
+                return Err(color_eyre::eyre::eyre!(
+                    "The second input for depth must be an initializer tensor for OneHot operator"
+                ));
+            };
+            let [depth] = tensor.as_slice() else {
+                return Err(color_eyre::eyre::eyre!(
+                    "The depth tensor must be a scalar for OneHot operator"
+                ));
+            };
+            Ok(*depth as usize)
         }
     }
 }
