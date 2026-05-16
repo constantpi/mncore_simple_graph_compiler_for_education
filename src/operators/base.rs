@@ -2,7 +2,9 @@ use color_eyre::eyre::Result;
 use std::collections::HashMap;
 use tract_onnx::pb::{GraphProto, NodeProto};
 
-use super::{AddOperator, GemmOperator, IdentityOperator, ReduceMaxOperator, ReluOperator};
+use super::{
+    AddOperator, GemmOperator, IdentityOperator, ReduceMaxOperator, ReluOperator, SubOperator,
+};
 use crate::utils::value_info_to_type_vector;
 
 pub struct BaseData<'a> {
@@ -152,6 +154,7 @@ pub fn gen_base_operator<'a>(
         "Relu" => Ok(Box::new(ReluOperator::new(node_proto, graph, var_map))),
         "Identity" => Ok(Box::new(IdentityOperator::new(node_proto, graph, var_map))),
         "ReduceMax" => Ok(Box::new(ReduceMaxOperator::new(node_proto, graph, var_map))),
+        "Sub" => Ok(Box::new(SubOperator::new(node_proto, graph, var_map))),
         _ => Err(color_eyre::eyre::eyre!(
             "Unsupported operator type: {}",
             node_proto.op_type
