@@ -1,6 +1,6 @@
 use color_eyre::eyre::Result;
 use std::collections::HashMap;
-use tract_onnx::pb::ModelProto;
+use tract_onnx::pb::{GraphProto, ModelProto};
 
 use crate::operators::gen_base_operator;
 use crate::utils::{ElemType, value_info_to_type_vector};
@@ -149,17 +149,58 @@ pub fn generate_cpp_code(model: ModelProto) -> Result<String> {
     // ノードを処理
     lines.push("    // ノードを処理".to_string());
     for node in graph.node.iter() {
-        let op_type = node.op_type.clone();
-        println!("Processing node: {} of type {}", node.name, op_type);
         let mut operator = gen_base_operator(node, &graph, &mut variable_map)?;
         let op_lines = operator.generate_cpp_code()?;
-        println!(
-            "Generated code for node {}:\n{}",
-            node.name,
-            op_lines.join("\n")
-        );
         lines.extend(op_lines);
     }
 
+    // 出力を保存
+    lines.push("".to_string());
+    lines.push("    // 出力を保存".to_string());
+
+    let output_mapping = get_output_mapping(&graph, &variable_map)?;
+    // 出力名の重複を処理するためのカウンタ（関数シグネチャと一致させる）
+    let mut output_name_counts = HashMap::new();
+    for (out_name, var_name) in output_mapping {
+        // *output_name_counts.entry(out_name.clone()).or_insert(0) += 1;
+        // let unique_out_name = if output_name_counts[&out_name] == 1 {
+        //     out_name.clone()
+        // } else {
+        //     format!("{}_{}", out_name, output_name_counts[&out_name])
+        // };
+        let cnt = output_name_counts.entry(out_name.clone()).or_insert(0);
+        let unique_out_name = if *cnt == 0 {
+            format!("{}_ptr", out_name)
+        } else {
+            format!("{}_{}_ptr", out_name, cnt)
+        };
+        *cnt += 1;
+        lines.push(format!("    save({var_name}, {unique_out_name});"))
+    }
+    lines.push("}".to_string());
+    lines.push("".to_string());
+    lines.push("} // extern \"C\"".to_string());
+
     Ok(lines.join("\n"))
+}
+
+fn get_output_mapping(
+    graph: &GraphProto,
+    variable_map: &HashMap<String, String>,
+) -> Result<Vec<(String, String)>> {
+    graph
+        .output
+        .iter()
+        .map(|out_info| {
+            let out_name = out_info.name.clone();
+            if let Some(mapped_name) = variable_map.get(&out_name) {
+                Ok((out_name, mapped_name.clone()))
+            } else {
+                Err(color_eyre::eyre::eyre!(
+                    "Output '{}' does not have a mapped variable name",
+                    out_name
+                ))
+            }
+        })
+        .collect()
 }
